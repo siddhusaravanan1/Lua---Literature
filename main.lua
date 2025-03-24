@@ -16,7 +16,6 @@ function loadCardImages()
     end
 end
 
-
 function createDeck()
     deck = {} 
     for _, suit in ipairs(suits) do
@@ -27,14 +26,12 @@ function createDeck()
     end
 end
 
-
 function shuffleDeck()
     for i = #deck, 2, -1 do
         local j = math.random(i)
         deck[i], deck[j] = deck[j], deck[i]
     end
 end
-
 
 function pickThreeUniqueCards()
     randomCards = {}
@@ -43,7 +40,6 @@ function pickThreeUniqueCards()
     end
 end
 
-
 function love.load()
     math.randomseed(os.time())
     loadCardImages()
@@ -51,7 +47,6 @@ function love.load()
     shuffleDeck()
     pickThreeUniqueCards()
 end
-
 
 function love.draw()
 
@@ -63,6 +58,6 @@ function love.draw()
         local cardImage = cardImages[cardName]
         love.graphics.draw(cardImage, xOffset, yOffset, nil, 3, 3)
         xOffset = xOffset + spacing
-
+        yOffset = yOffset + spacing
     end
 end
