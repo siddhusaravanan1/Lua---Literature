@@ -1,27 +1,31 @@
 local suits = {"hearts", "diamonds", "clubs", "spades"}
 local ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"}
 
+local cardValues = {
+    ["2"] = 2, ["3"] = 3, ["4"] = 4, ["5"] = 5, ["6"] = 6, ["7"] = 7,
+    ["8"] = 8, ["9"] = 9, ["10"] = 10, ["J"] = 11, ["Q"] = 12, ["K"] = 13, ["A"] = 14
+}
+
 local deck = {}
 local cardImages = {}
-local randomCards = {}
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 function loadCardImages()
     for _, suit in ipairs(suits) do
         for _, rank in ipairs(ranks) do
-            local cardName = rank .. "" .. suit 
+            local cardName = rank .. suit 
             cardImages[cardName] = love.graphics.newImage("sprites/cardImages/" .. cardName .. ".png")
         end
     end
 end
 
 function createDeck()
-    deck = {} 
     for _, suit in ipairs(suits) do
         for _, rank in ipairs(ranks) do
-            local cardName = rank .. "" .. suit
-            table.insert(deck, cardName)
+            local cardName = rank .. suit
+            local cardValue = cardValues[rank] -- Get value from lookup table
+            table.insert(deck, {name = cardName, value = cardValue}) -- Store name and value
         end
     end
 end
@@ -32,32 +36,32 @@ function shuffleDeck()
         deck[i], deck[j] = deck[j], deck[i]
     end
 end
-
-function pickThreeUniqueCards()
+function pickUniqueCards()
     randomCards = {}
-    for i = 1, 3 do
+    for i = 1, 4 do
         table.insert(randomCards, table.remove(deck))
     end
 end
+
 
 function love.load()
     math.randomseed(os.time())
     loadCardImages()
     createDeck()
     shuffleDeck()
-    pickThreeUniqueCards()
+    pickUniqueCards()
 end
 
 function love.draw()
 
-    local xOffset = 200
-    local yOffset = 150
-    local spacing = 150
+        local xOffset = 150
+        local yOffset = 150
+        local spacing = 150
 
-    for _, cardName in ipairs(randomCards) do
-        local cardImage = cardImages[cardName]
-        love.graphics.draw(cardImage, xOffset, yOffset, nil, 3, 3)
-        xOffset = xOffset + spacing
-        yOffset = yOffset + spacing
-    end
+        for _, card in ipairs(randomCards) do
+            local cardImage = cardImages[card.name]
+            love.graphics.draw(cardImage, xOffset, yOffset, nil, 3, 3)
+            love.graphics.print(card.value, xOffset + 5, yOffset - 15)
+            xOffset = xOffset + spacing
+        end
 end
