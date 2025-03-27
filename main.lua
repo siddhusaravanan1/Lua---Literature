@@ -9,6 +9,8 @@ local cardValues = {
 local deck = {}
 local cardImages = {}
 
+local canRunAway = true
+
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 function loadCardImages()
@@ -42,7 +44,16 @@ function pickUniqueCards()
         table.insert(randomCards, table.remove(deck))
     end
 end
-
+function runAway()
+    for i = 1, 4 do
+        table.insert(deck, table.remove(randomCards))
+    end
+    for i = 1, 4 do
+        shuffleDeck()
+        table.insert(randomCards, table.remove(deck))
+    end
+    canRunAway = false
+end
 
 function love.load()
     math.randomseed(os.time())
@@ -50,6 +61,15 @@ function love.load()
     createDeck()
     shuffleDeck()
     pickUniqueCards()
+end
+
+function love.update(dt)
+    if love.keyboard.isDown('s') and canRunAway then
+        runAway()
+    end
+    if love.keyboard.isDown('r') and not canRunAway then
+        canRunAway = true
+    end
 end
 
 function love.draw()
