@@ -11,11 +11,13 @@ local cardImages = {}
 local randomCards = {}
 
 local canRunAway = true
+local fillHand = false
+
 local draggingCard = nil
 local offsetX, offsetY = 0, 0
 
-local fillHand = false
-
+local life = 20
+local distance = {}
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 function loadCardImages()
@@ -31,7 +33,7 @@ function createDeck()
     for _, suit in ipairs(suits) do
         for _, rank in ipairs(ranks) do
             local cardName = rank .. suit
-            local cardValue = cardValues[rank] 
+            local cardValue = cardValues[rank]
             table.insert(deck, {name = cardName, value = cardValue})
         end
     end
@@ -53,7 +55,7 @@ function pickUniqueCards()
         card = table.remove(deck)
         card.x = xOffset
         card.y = yOffset
-        card.originalX = xOffset 
+        card.originalX = xOffset
         card.originalY = yOffset
         card.width = 105
         card.height = 150
@@ -64,6 +66,60 @@ function pickUniqueCards()
         table.remove(card)
     end
 end
+
+function distanceCheck()
+    if draggingCard then
+        distance.a = draggingCard.x - randomCards[1].x
+        distance.b = draggingCard.x - randomCards[2].x
+        distance.c = draggingCard.x - randomCards[3].x
+        distance.d = draggingCard.x - randomCards[4].x
+        distance.a = math.abs(distance.a)
+        distance.b = math.abs(distance.b)
+        distance.c = math.abs(distance.c)
+        distance.d = math.abs(distance.d)
+    end
+end
+
+function battleCalc()
+    local damage = 0
+        if distance.a <= 20 then
+            if randomCards[1].value >= draggingCard.value then
+                table.remove(randomCards[2])
+            elseif randomCards[1].value < draggingCard.value then
+                damage = randomCards[1].value - draggingCard.value
+                damage = math.abs(damage)
+            end
+            life = life - damage
+        end
+        if distance.b <= 20 then
+            if randomCards[2].value >= draggingCard.value then
+                table.remove(draggingCard)
+            elseif randomCards[2].value < draggingCard.value then
+                damage = randomCards[2].value - draggingCard.value
+                damage = math.abs(damage)
+            end
+            life = life - damage
+        end
+        if distance.c <= 20 then
+            if randomCards[3].value >= draggingCard.value then
+                table.remove(draggingCard)
+            elseif randomCards[3].value < draggingCard.value then
+                damage = randomCards[3].value - draggingCard.value
+                damage = math.abs(damage)
+            end
+            life = life - damage
+        end
+        if distance.d <= 20 then
+            if randomCards[4].value >= draggingCard.value then
+                table.remove(draggingCard)
+            elseif randomCards[4].value < draggingCard.value then
+                damage = randomCards[4].value - draggingCard.value
+                damage = math.abs(damage)
+            end
+            life = life - damage
+        end
+end
+
 
 function runAway()
     canRunAway = false
@@ -97,13 +153,23 @@ function love.update(dt)
         draggingCard.x = mouseX - offsetX
         draggingCard.y = mouseY - offsetY
     end
+    distanceCheck()
 end
 
 function love.draw()
+    
+    local yOffset = 0
     for _, card in ipairs(randomCards) do
         local cardImage = cardImages[card.name]
         love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
         love.graphics.print(card.value, card.xText, card.yText)
+    end
+    love.graphics.print('Life: ' .. life, 10, 10)
+    if draggingCard then
+        love.graphics.print('distance.a = ' .. distance.a , 10, 20)
+        love.graphics.print('distance.b = ' .. distance.b , 10, 30)
+        love.graphics.print('distance.c = ' .. distance.c , 10, 40)
+        love.graphics.print('distance.d = ' .. distance.d , 10, 50)
     end
 end
 
@@ -114,6 +180,7 @@ function love.mousepressed(x, y, button)
                 draggingCard = card
                 offsetX = x - card.x
                 offsetY = y - card.y
+                draggingCard.value = card.value
                 break
             end
         end
@@ -122,6 +189,7 @@ end
 
 function love.mousereleased(x, y, button)
     if button == 1 and draggingCard then
+        battleCalc()
         draggingCard.x = draggingCard.originalX
         draggingCard.y = draggingCard.originalY
         draggingCard = nil
