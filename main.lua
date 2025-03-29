@@ -14,7 +14,7 @@ local canRunAway = true
 local draggingCard = nil
 local offsetX, offsetY = 0, 0
 
-local cardPositions = {}
+local fillHand = false
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -45,31 +45,36 @@ function shuffleDeck()
 end
 
 function pickUniqueCards()
-    randomCards = {}
     local xOffset = 150
     local yOffset = 150
     local spacing = 150
-
+    local card
     for i = 1, 4 do
-        local card = table.remove(deck)
+        card = table.remove(deck)
         card.x = xOffset
         card.y = yOffset
-        card.width = 105  -- Adjust based on actual card image size
-        card.height = 150 -- Adjust based on actual card image size
+        card.originalX = xOffset 
+        card.originalY = yOffset
+        card.width = 105
+        card.height = 150
+        card.xText = card.originalX + 5
+        card.yText = card.originalY - 15
         table.insert(randomCards, card)
         xOffset = xOffset + spacing
+        table.remove(card)
     end
 end
 
 function runAway()
+    canRunAway = false
     for i = 1, 4 do
         table.insert(deck, table.remove(randomCards))
-    end
-    for i = 1, 4 do
         shuffleDeck()
-        table.insert(randomCards, table.remove(deck))
     end
-    canRunAway = false
+    fillHand = true
+    if fillHand then
+        pickUniqueCards()
+    end
 end
 
 function love.load()
@@ -87,8 +92,6 @@ function love.update(dt)
     if love.keyboard.isDown('r') and not canRunAway then
         canRunAway = true
     end
-
-    -- Move the dragged card with the mouse
     if draggingCard then
         local mouseX, mouseY = love.mouse.getPosition()
         draggingCard.x = mouseX - offsetX
@@ -100,15 +103,14 @@ function love.draw()
     for _, card in ipairs(randomCards) do
         local cardImage = cardImages[card.name]
         love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
-        love.graphics.print(card.value, card.x + 5, card.y - 15)
+        love.graphics.print(card.value, card.xText, card.yText)
     end
 end
 
 function love.mousepressed(x, y, button)
-    if button == 1 then -- Left mouse button
+    if button == 1 then
         for _, card in ipairs(randomCards) do
-            if x >= card.x and x <= card.x + card.width and 
-               y >= card.y and y <= card.y + card.height then
+            if x >= card.x and x <= card.x + card.width and y >= card.y and y <= card.y + card.height then
                 draggingCard = card
                 offsetX = x - card.x
                 offsetY = y - card.y
@@ -119,7 +121,9 @@ function love.mousepressed(x, y, button)
 end
 
 function love.mousereleased(x, y, button)
-    if button == 1 then
-        draggingCard = nil -- Stop dragging when mouse is released
+    if button == 1 and draggingCard then
+        draggingCard.x = draggingCard.originalX
+        draggingCard.y = draggingCard.originalY
+        draggingCard = nil
     end
 end
