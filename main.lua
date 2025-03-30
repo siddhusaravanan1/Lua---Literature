@@ -70,7 +70,7 @@ end
 
 function distanceCheck()
     if draggingCard then
-        distance = {}  -- Reset distance table
+        distance = {}
         for i = 1, #randomCards do
             local dist = math.abs(draggingCard.x - randomCards[i].x)
             if dist > 0 then
@@ -84,16 +84,23 @@ end
 function activeDragging()
     for i, card in ipairs(randomCards) do
         if card == draggingCard then
+            local oldX, oldY = draggingCard.originalX, draggingCard.originalY
             table.remove(randomCards, i)
+
             local newCard = table.remove(deck)
-            newCard.x = draggingCard.originalX
-            newCard.y = draggingCard.originalY
-            newCard.width = 105
-            newCard.height = 150
-            newCard.xText = draggingCard.originalX + 5
-            newCard.yText = draggingCard.originalY - 15
-            table.insert(randomCards, i, newCard)
-            table.remove(newCard)
+            if newCard then
+                newCard.x = oldX
+                newCard.y = oldY
+                newCard.originalX = oldX
+                newCard.originalY = oldY
+                newCard.width = 105
+                newCard.height = 150
+                newCard.xText = oldX + 5
+                newCard.yText = oldY - 15
+                table.insert(randomCards, i, newCard)
+            else
+                print("No more cards in the deck!")
+            end
             draggingCard = nil
             break
         end
