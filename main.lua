@@ -18,6 +18,7 @@ local draggingCard = nil
 local offsetX, offsetY = 0, 0
 
 local life = 20
+local baseValue = 15
 local distance = {}
 love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -134,8 +135,9 @@ function battleCalc()
     local heartsCheck = "hearts"
     if dragginPresent then
         for i = 1, #randomCards do
-            if distance[i] and distance[i] <= 20 then
+            if distance[i] and distance[i] <= 20 and baseValue > randomCards[i].value then
                 if string.find(draggingCard.name, check, 1, true) and not string.find(randomCards[i].name, heartsCheck, 1, true) and not string.find(randomCards[i].name, check, 1, true) then
+                    baseValue = randomCards[i].value
                     if randomCards[i].value < draggingCard.value then
                         local oldX, oldY = randomCards[i].x, randomCards[i].y
                         table.remove(randomCards,i)
@@ -155,7 +157,7 @@ function battleCalc()
                         end
                         dragginPresent = false
                     else
-                        activeDragging()
+                        --activeDragging()
                         damage = math.abs(randomCards[i].value - draggingCard.value)
                         local oldX, oldY = randomCards[i].x, randomCards[i].y
                         table.remove(randomCards,i)
@@ -206,6 +208,7 @@ end
 
 function love.update(dt)
     if love.keyboard.isDown('s') and canRunAway then
+        baseValue = 15
         runAway()
         print("working")
     end
@@ -232,7 +235,7 @@ function love.draw()
         local cardImage = cardImages[card.name]
         love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
         love.graphics.print(card.value, card.xText, card.yText)
-        love.graphics.print(card.name, 10, 100)
+        love.graphics.print("base value: " .. baseValue, 10, 100)
     end
     love.graphics.print('Life: ' .. life, 10, 10)
     if draggingCard then
@@ -262,13 +265,11 @@ function love.mousereleased(x, y, button)
         addHealth()
         idealDamage()
         battleCalc()
-        if dragginPresent then
-            draggingCard.x = draggingCard.originalX
-            draggingCard.y = draggingCard.originalY
-            draggingCard = nil
-        else
-            activeDragging()
-            draggingCard = nil
-        end
+        draggingCard.x = draggingCard.originalX
+        draggingCard.y = draggingCard.originalY
+        draggingCard = nil
+        --activeDragging()
+        draggingCard = nil
+        
     end
 end
