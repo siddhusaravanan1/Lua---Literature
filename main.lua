@@ -100,8 +100,29 @@ function activeDragging()
             else
                 print("No more cards in the deck!")
             end
-            draggingCard = nil
+            --draggingCard = nil
             break
+        end
+    end
+end
+
+function addHealth()
+    local heartsCheck = "hearts"
+    if dragginPresent then
+        if string.find(draggingCard.name, heartsCheck, 1, true) then
+            life = life + draggingCard.value
+            activeDragging()
+        end
+    end
+end
+
+function idealDamage()
+    local checkClubDamage = "clubs"
+    local checkSpadeDamage = "spades"
+    if dragginPresent then
+        if string.find(draggingCard.name, checkClubDamage, 1, true) or string.find(draggingCard.name, checkSpadeDamage, 1, true) then
+            life = life - draggingCard.value
+            activeDragging()
         end
     end
 end
@@ -113,32 +134,50 @@ function battleCalc()
     local heartsCheck = "hearts"
     if dragginPresent then
         for i = 1, #randomCards do
-            if distance[i] and distance[i] <= 20 and string.find(randomCards[i].name, check, 1, true) and not string.find(randomCards[i].name, heartsCheck, 1, true) --[[or string.find(draggingCard.name, check, 1, true)]] then
-                if randomCards[i].value >= draggingCard.value then
-                    activeDragging()
-                    dragginPresent = false
-                else
-                    damage = math.abs(randomCards[i].value - draggingCard.value)
-                    local oldX, oldY = randomCards[i].x, randomCards[i].y
-                    table.remove(randomCards,i)
-                    local newCard = table.remove(deck)
-                    if newCard then
-                        newCard.x = oldX
-                        newCard.y = oldY
-                        newCard.originalX = oldX
-                        newCard.originalY = oldY
-                        newCard.width = 105
-                        newCard.height = 150
-                        newCard.xText = oldX + 5
-                        newCard.yText = oldY - 15
-                        table.insert(randomCards, i, newCard)
+            if distance[i] and distance[i] <= 20 then
+                if string.find(draggingCard.name, check, 1, true) and not string.find(randomCards[i].name, heartsCheck, 1, true) and not string.find(randomCards[i].name, check, 1, true) then
+                    if randomCards[i].value < draggingCard.value then
+                        local oldX, oldY = randomCards[i].x, randomCards[i].y
+                        table.remove(randomCards,i)
+                        local newCard = table.remove(deck)
+                        if newCard then
+                            newCard.x = oldX
+                            newCard.y = oldY
+                            newCard.originalX = oldX
+                            newCard.originalY = oldY
+                            newCard.width = 105
+                            newCard.height = 150
+                            newCard.xText = oldX + 5
+                            newCard.yText = oldY - 15
+                            table.insert(randomCards, i, newCard)
+                        else
+                            print("No more cards in the deck!")
+                        end
+                        dragginPresent = false
                     else
-                        print("No more cards in the deck!")
+                        activeDragging()
+                        damage = math.abs(randomCards[i].value - draggingCard.value)
+                        local oldX, oldY = randomCards[i].x, randomCards[i].y
+                        table.remove(randomCards,i)
+                        local newCard = table.remove(deck)
+                        if newCard then
+                            newCard.x = oldX
+                            newCard.y = oldY
+                            newCard.originalX = oldX
+                            newCard.originalY = oldY
+                            newCard.width = 105
+                            newCard.height = 150
+                            newCard.xText = oldX + 5
+                            newCard.yText = oldY - 15
+                            table.insert(randomCards, i, newCard)
+                        else
+                            print("No more cards in the deck!")
+                        end
+                        print("working")
                     end
-                    print("working")
+                    life = life - damage
+                    damage = 0
                 end
-                life = life - damage
-                damage = 0
             end
         end
     end
@@ -178,6 +217,11 @@ function love.update(dt)
         draggingCard.x = mouseX - offsetX
         draggingCard.y = mouseY - offsetY
     end
+    if life > 20 then
+        life = 20
+    elseif life < 0 then
+        life = 0
+    end
     distanceCheck()
 end
 
@@ -202,10 +246,9 @@ end
 function love.mousepressed(x, y, button)
     if button == 1 then
         dragginPresent = true
-        for i, card in ipairs(randomCards) do
+        for _, card in ipairs(randomCards) do
             if x >= card.x and x <= card.x + card.width and y >= card.y and y <= card.y + card.height then
                 draggingCard = card
-                draggingCard.name = card.name
                 offsetX = x - card.x
                 offsetY = y - card.y
                 break
@@ -216,10 +259,15 @@ end
 
 function love.mousereleased(x, y, button)
     if button == 1 and draggingCard then
+        addHealth()
+        idealDamage()
         battleCalc()
         if dragginPresent then
             draggingCard.x = draggingCard.originalX
             draggingCard.y = draggingCard.originalY
+            draggingCard = nil
+        else
+            activeDragging()
             draggingCard = nil
         end
     end
