@@ -86,7 +86,6 @@ function activeDragging()
         if card == draggingCard then
             local oldX, oldY = draggingCard.originalX, draggingCard.originalY
             table.remove(randomCards, i)
-
             local newCard = table.remove(deck)
             if newCard then
                 newCard.x = oldX
@@ -107,16 +106,35 @@ function activeDragging()
     end
 end
 
+
 function battleCalc()
     local damage = 0
+    local check = "diamonds"
+    local heartsCheck = "hearts"
     if dragginPresent then
         for i = 1, #randomCards do
-            if distance[i] and distance[i] <= 20 then
+            if distance[i] and distance[i] <= 20 and string.find(randomCards[i].name, check, 1, true) and not string.find(randomCards[i].name, heartsCheck, 1, true) --[[or string.find(draggingCard.name, check, 1, true)]] then
                 if randomCards[i].value >= draggingCard.value then
                     activeDragging()
                     dragginPresent = false
                 else
                     damage = math.abs(randomCards[i].value - draggingCard.value)
+                    local oldX, oldY = randomCards[i].x, randomCards[i].y
+                    table.remove(randomCards,i)
+                    local newCard = table.remove(deck)
+                    if newCard then
+                        newCard.x = oldX
+                        newCard.y = oldY
+                        newCard.originalX = oldX
+                        newCard.originalY = oldY
+                        newCard.width = 105
+                        newCard.height = 150
+                        newCard.xText = oldX + 5
+                        newCard.yText = oldY - 15
+                        table.insert(randomCards, i, newCard)
+                    else
+                        print("No more cards in the deck!")
+                    end
                     print("working")
                 end
                 life = life - damage
@@ -166,10 +184,11 @@ end
 function love.draw()
     
     local yOffset = 20
-    for _, card in ipairs(randomCards) do
+    for i, card in ipairs(randomCards) do
         local cardImage = cardImages[card.name]
         love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
         love.graphics.print(card.value, card.xText, card.yText)
+        love.graphics.print(card.name, 10, 100)
     end
     love.graphics.print('Life: ' .. life, 10, 10)
     if draggingCard then
@@ -183,12 +202,12 @@ end
 function love.mousepressed(x, y, button)
     if button == 1 then
         dragginPresent = true
-        for _, card in ipairs(randomCards) do
+        for i, card in ipairs(randomCards) do
             if x >= card.x and x <= card.x + card.width and y >= card.y and y <= card.y + card.height then
                 draggingCard = card
+                draggingCard.name = card.name
                 offsetX = x - card.x
                 offsetY = y - card.y
-                draggingCard.value = card.value
                 break
             end
         end
