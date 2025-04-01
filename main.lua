@@ -21,6 +21,8 @@ local offsetX, offsetY = 0, 0
 local life = 20
 local baseValue = 15
 local setupCard = 15
+local endSaveCard = 0
+local lastUsedDiamond = nil
 local distance = {}
 love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -109,6 +111,32 @@ function activeDragging()
     end
 end
 
+function setCardChange()
+    for i, card in ipairs(randomCards) do
+        if card.value == endSaveCard then
+            local oldX, oldY = card.originalX, card.originalY
+            table.remove(randomCards, i)
+            local newCard = table.remove(deck)
+            if newCard then
+                newCard.x = oldX
+                newCard.y = oldY
+                newCard.originalX = oldX
+                newCard.originalY = oldY
+                newCard.width = 105
+                newCard.height = 150
+                newCard.xText = oldX + 5
+                newCard.yText = oldY - 15
+                table.insert(randomCards, i, newCard)
+            else
+                print("No more cards in the deck!")
+            end
+            --draggingCard = nil
+            break
+        end
+    end
+end
+
+
 function addHealth()
     local heartsCheck = "hearts"
     if dragginPresent then
@@ -191,6 +219,7 @@ end
 function runAway()
     canRunAway = false
     for i = 1, 4 do
+        lastUsedDiamond = nil
         table.insert(deck, table.remove(randomCards))
         shuffleDeck()
     end
@@ -238,7 +267,6 @@ function love.draw()
         love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
         love.graphics.print(card.value, card.xText, card.yText)
         love.graphics.print("base value: " .. baseValue, 10, 100)
-        love.graphics.print("setup value: " .. setupCard, 10, 115)
     end
     love.graphics.print('Life: ' .. life, 10, 10)
     if draggingCard then
@@ -248,23 +276,46 @@ function love.draw()
         end
     end
 end
+
 function love.mousepressed(x, y, button)
     if button == 1 then
         dragginPresent = true
-        for _, card in ipairs(randomCards) do
+        for i, card in ipairs(randomCards) do
             if x >= card.x and x <= card.x + card.width and y >= card.y and y <= card.y + card.height then
                 local check = "diamonds"
                 draggingCard = card
                 offsetX = x - card.x
                 offsetY = y - card.y
-                if string.find(draggingCard.name, check, 1, true) and not setCard then
-                    setupCard = draggingCard.value
-                    setCard = true
-                end
-                if string.find(draggingCard.name, check, 1, true) and setCard then
-                    --activeDragging()
-                    setupCard = draggingCard.value
-                    baseValue = 15
+
+                if string.find(draggingCard.name, check, 1, true) then
+                    if lastUsedDiamond and lastUsedDiamond.name == draggingCard.name then
+                        return
+                    end
+                    if lastUsedDiamond then
+                        baseValue = 15
+                        for j = #randomCards, 1, -1 do
+                            if randomCards[j].name == lastUsedDiamond.name then
+                                local oldX, oldY = randomCards[j].x, randomCards[j].y
+                                table.remove(randomCards, j)
+                                local newCard = table.remove(deck)
+                                if newCard then
+                                    newCard.x = oldX
+                                    newCard.y = oldY
+                                    newCard.originalX = oldX
+                                    newCard.originalY = oldY
+                                    newCard.width = 105
+                                    newCard.height = 150
+                                    newCard.xText = oldX + 5
+                                    newCard.yText = oldY - 15
+                                    table.insert(randomCards, j, newCard)
+                                else
+                                    print("No more cards in the deck!")
+                                end
+                                break
+                            end
+                        end
+                    end
+                    lastUsedDiamond = draggingCard
                 end
                 break
             end
