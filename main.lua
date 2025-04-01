@@ -13,12 +13,14 @@ local randomCards = {}
 local canRunAway = true
 local fillHand = false
 local dragginPresent = false
+local setCard = false
 
 local draggingCard = nil
 local offsetX, offsetY = 0, 0
 
 local life = 20
 local baseValue = 15
+local setupCard = 15
 local distance = {}
 love.graphics.setDefaultFilter("nearest", "nearest")
 
@@ -135,7 +137,7 @@ function battleCalc()
     local heartsCheck = "hearts"
     if dragginPresent then
         for i = 1, #randomCards do
-            if distance[i] and distance[i] <= 20 and baseValue > randomCards[i].value then
+            if distance[i] and distance[i] <= 20 and baseValue >= randomCards[i].value then
                 if string.find(draggingCard.name, check, 1, true) and not string.find(randomCards[i].name, heartsCheck, 1, true) and not string.find(randomCards[i].name, check, 1, true) then
                     baseValue = randomCards[i].value
                     if randomCards[i].value < draggingCard.value then
@@ -236,6 +238,7 @@ function love.draw()
         love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
         love.graphics.print(card.value, card.xText, card.yText)
         love.graphics.print("base value: " .. baseValue, 10, 100)
+        love.graphics.print("setup value: " .. setupCard, 10, 115)
     end
     love.graphics.print('Life: ' .. life, 10, 10)
     if draggingCard then
@@ -245,15 +248,24 @@ function love.draw()
         end
     end
 end
-
 function love.mousepressed(x, y, button)
     if button == 1 then
         dragginPresent = true
         for _, card in ipairs(randomCards) do
             if x >= card.x and x <= card.x + card.width and y >= card.y and y <= card.y + card.height then
+                local check = "diamonds"
                 draggingCard = card
                 offsetX = x - card.x
                 offsetY = y - card.y
+                if string.find(draggingCard.name, check, 1, true) and not setCard then
+                    setupCard = draggingCard.value
+                    setCard = true
+                end
+                if string.find(draggingCard.name, check, 1, true) and setCard then
+                    --activeDragging()
+                    setupCard = draggingCard.value
+                    baseValue = 15
+                end
                 break
             end
         end
