@@ -9,21 +9,19 @@ local cardValues = {
 local deck = {}
 local cardImages = {}
 local randomCards = {}
+local distance = {}
 
 local canRunAway = true
 local fillHand = false
 local dragginPresent = false
-local setCard = false
+local gameReset = false
 
 local draggingCard = nil
-local offsetX, offsetY = 0, 0
+local lastUsedDiamond = nil
 
+local offsetX, offsetY = 0, 0
 local life = 20
 local baseValue = 15
-local setupCard = 15
-local endSaveCard = 0
-local lastUsedDiamond = nil
-local distance = {}
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 function loadCardImages()
@@ -111,36 +109,10 @@ function activeDragging()
     end
 end
 
-function setCardChange()
-    for i, card in ipairs(randomCards) do
-        if card.value == endSaveCard then
-            local oldX, oldY = card.originalX, card.originalY
-            table.remove(randomCards, i)
-            local newCard = table.remove(deck)
-            if newCard then
-                newCard.x = oldX
-                newCard.y = oldY
-                newCard.originalX = oldX
-                newCard.originalY = oldY
-                newCard.width = 105
-                newCard.height = 150
-                newCard.xText = oldX + 5
-                newCard.yText = oldY - 15
-                table.insert(randomCards, i, newCard)
-            else
-                print("No more cards in the deck!")
-            end
-            --draggingCard = nil
-            break
-        end
-    end
-end
-
-
 function addHealth()
     local heartsCheck = "hearts"
     if dragginPresent then
-        if string.find(draggingCard.name, heartsCheck, 1, true) then
+        if draggingCard.y > 400 and string.find(draggingCard.name, heartsCheck, 1, true) then
             life = life + draggingCard.value
             activeDragging()
         end
@@ -151,7 +123,7 @@ function idealDamage()
     local checkClubDamage = "clubs"
     local checkSpadeDamage = "spades"
     if dragginPresent then
-        if string.find(draggingCard.name, checkClubDamage, 1, true) or string.find(draggingCard.name, checkSpadeDamage, 1, true) then
+        if draggingCard.y > 400 and (string.find(draggingCard.name, checkClubDamage, 1, true) or string.find(draggingCard.name, checkSpadeDamage, 1, true)) then
             life = life - draggingCard.value
             activeDragging()
         end
@@ -167,6 +139,7 @@ function battleCalc()
         for i = 1, #randomCards do
             if distance[i] and distance[i] <= 20 and baseValue >= randomCards[i].value then
                 if string.find(draggingCard.name, check, 1, true) and not string.find(randomCards[i].name, heartsCheck, 1, true) and not string.find(randomCards[i].name, check, 1, true) then
+                    canRunAway = true
                     baseValue = randomCards[i].value
                     if randomCards[i].value < draggingCard.value then
                         local oldX, oldY = randomCards[i].x, randomCards[i].y
@@ -214,11 +187,35 @@ function battleCalc()
         end
     end
 end
-
+    
 
 function runAway()
     canRunAway = false
     for i = 1, 4 do
+        if lastUsedDiamond then
+            baseValue = 15
+            for j = #randomCards, 1, -1 do
+                if randomCards[j].name == lastUsedDiamond.name then
+                    local oldX, oldY = randomCards[j].x, randomCards[j].y
+                    table.remove(randomCards, j)
+                    local newCard = table.remove(deck)
+                    if newCard then
+                        newCard.x = oldX
+                        newCard.y = oldY
+                        newCard.originalX = oldXs
+                        newCard.originalY = oldY
+                        newCard.width = 105
+                        newCard.height = 150
+                        newCard.xText = oldX + 5
+                        newCard.yText = oldY - 15
+                        table.insert(randomCards, j, newCard)
+                    else
+                        print("No more cards in the deck!")
+                    end
+                    break
+                end
+            end
+        end
         lastUsedDiamond = nil
         table.insert(deck, table.remove(randomCards))
         shuffleDeck()
@@ -243,9 +240,6 @@ function love.update(dt)
         runAway()
         print("working")
     end
-    if love.keyboard.isDown('r') and not canRunAway then
-        canRunAway = true
-    end
     if draggingCard then
         local mouseX, mouseY = love.mouse.getPosition()
         draggingCard.x = mouseX - offsetX
@@ -257,6 +251,30 @@ function love.update(dt)
         life = 0
     end
     distanceCheck()
+    if life == 0 then
+        table.remove(deck)
+        table.remove(randomCards)
+        gameReset = false
+    end
+    if life == 0 and love.keyboard.isDown('p') and not gameReset then
+        life = 20
+        createDeck()
+        shuffleDeck()
+        pickUniqueCards()
+        gameReset = true
+    end
+    if next(deck) == nil then
+        gameReset = false
+        if love.keyboard.isDown('p') and not gameReset then
+            table.remove(deck)
+            table.remove(randomCards)
+            life = 20
+            createDeck()
+            shuffleDeck()
+            pickUniqueCards()
+            gameReset = true
+        end
+    end
 end
 
 function love.draw()
@@ -266,7 +284,7 @@ function love.draw()
         local cardImage = cardImages[card.name]
         love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
         love.graphics.print(card.value, card.xText, card.yText)
-        love.graphics.print("base value: " .. baseValue, 10, 100)
+        --love.graphics.print("base value: " .. baseValue, 10, 100)
     end
     love.graphics.print('Life: ' .. life, 10, 10)
     if draggingCard then
@@ -275,6 +293,15 @@ function love.draw()
             yOffset = yOffset + 10
         end
     end
+
+    love.graphics.print("Diamonds are attack cards, hearts are heal cards, you have to use diamond card for attacking clubs and spades" , 60, 400)
+    love.graphics.print("To attack drag and drop the diamond cards next to spade(right hand side)" , 150, 420)
+    love.graphics.print("To take whole damage just drag and drop the black suit near instructions area" , 140, 440)
+    love.graphics.print("To heal just drag and drop the hearts suit near instructions area" , 180, 460)
+    love.graphics.print("Once a diamond card is used to kill a black suit, you can only attack lower value card than the previous card" , 60, 480)
+    love.graphics.print("Once a diamond card is used to kill a black suit, Another diamond card is chosen the previous one gets discarded" , 60, 500)
+    love.graphics.print("You can run from a hand, but can be only use again if you make an attack after using first run" , 100, 520)
+    love.graphics.print("Clear Black suit with live in hand to win, press P to restart the game once lost or won" , 120, 380)
 end
 
 function love.mousepressed(x, y, button)
