@@ -36,9 +36,11 @@ end
 function createDeck()
     for _, suit in ipairs(suits) do
         for _, rank in ipairs(ranks) do
-            local cardName = rank .. suit
-            local cardValue = cardValues[rank]
-            table.insert(deck, {name = cardName, value = cardValue})
+            if not ((suit == "diamonds" or suit == "hearts") and (rank == "A" or rank == "K" or rank == "Q" or rank == "J")) then
+                local cardName = rank .. suit
+                local cardValue = cardValues[rank]
+                table.insert(deck, {name = cardName, value = cardValue})
+            end
         end
     end
 end
